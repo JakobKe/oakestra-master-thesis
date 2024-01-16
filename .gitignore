@@ -56,3 +56,5 @@ deployment_helper/support/EdgeIO*
 
 # releases
 *.zip
+.vscode/settings.json
+.vscode/launch.json

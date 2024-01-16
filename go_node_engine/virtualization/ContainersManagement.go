@@ -41,7 +41,8 @@ var containerdSingletonCLient sync.Once
 var startContainerMonitoring sync.Once
 
 const NAMESPACE = "oakestra"
-const CGROUP_BASE_MEM = "/sys/fs/cgroup/memory/" + NAMESPACE
+const CGROUPV1_BASE_MEM = "/sys/fs/cgroup/memory/" + NAMESPACE
+const CGROUPV2_BASE_MEM = "/sys/fs/cgroup/" + NAMESPACE
 
 func GetContainerdClient() *ContainerRuntime {
 	containerdSingletonCLient.Do(func() {
@@ -53,6 +54,7 @@ func GetContainerdClient() *ContainerRuntime {
 		runtime.killQueue = make(map[string]*chan bool)
 		runtime.ctx = namespaces.WithNamespace(context.Background(), NAMESPACE)
 		runtime.forceContainerCleanup()
+		model.GetNodeInfo().AddSupportedTechnology(model.CONTAINER_RUNTIME)
 	})
 	return &runtime
 }
@@ -202,8 +204,15 @@ func (r *ContainerRuntime) containerCreationRoutine(
 		return
 	}
 
-	//	start task
-	task, err := container.NewTask(ctx, cio.NewCreator(cio.WithStdio))
+	//	start task with /tmp/hostname default log directory
+	file, err := os.OpenFile(fmt.Sprintf("%s/%s", model.GetNodeInfo().LogDirectory, hostname), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
+	if err != nil {
+		revert(err)
+		return
+	}
+	defer file.Close()
+	task, err := container.NewTask(ctx, cio.NewCreator(cio.WithStreams(nil, file, file)))
+
 	if err != nil {
 		logger.ErrorLogger().Printf("ERROR: containerd task creation failure: %v", err)
 		_ = container.Delete(ctx)
@@ -327,10 +336,10 @@ func (r *ContainerRuntime) ResourceMonitoring(every time.Duration, notifyHandler
 						cpuUsage = sysInfo.CPU / float64(model.GetNodeInfo().CpuCores)
 					}
 
-					mem, err := docker.CgroupMem(container.ID(), CGROUP_BASE_MEM)
+					mem, err := r.getContainerMemoryUsage(container.ID(), int(task.Pid()))
 					if err != nil {
 						logger.ErrorLogger().Printf("Unable to fetch container Memory: %v", err)
-						continue
+						mem = 0
 					}
 
 					containerMetadata, err := container.Info(r.ctx)
@@ -344,12 +353,14 @@ func (r *ContainerRuntime) ResourceMonitoring(every time.Duration, notifyHandler
 						logger.ErrorLogger().Printf("Unable to fetch task disk usage: %v", err)
 						continue
 					}
+
 					resourceList = append(resourceList, model.Resources{
 						Cpu:      fmt.Sprintf("%f", cpuUsage),
-						Memory:   fmt.Sprintf("%f", float64(mem.MemUsageInBytes)),
+						Memory:   fmt.Sprintf("%f", mem),
 						Disk:     fmt.Sprintf("%d", usage.Size),
 						Sname:    extractSnameFromTaskID(container.ID()),
-						Runtime:  model.CONTAINER_RUNTIME,
+						Runtime:  string(model.CONTAINER_RUNTIME),
+						Logs:     getLogs(container.ID()),
 						Instance: extractInstanceNumberFromTaskID(container.ID()),
 					})
 				}
@@ -386,6 +397,24 @@ func (r *ContainerRuntime) removeContainer(container containerd.Container) {
 	if err != nil {
 		logger.ErrorLogger().Printf("Unable to delete container: %v", err)
 	}
+}
+
+func (r *ContainerRuntime) getContainerMemoryUsage(containerID string, pid int) (float64, error) {
+	//trying fetching memory using CGROUP_V1 path
+	mem, err := docker.CgroupMem(containerID, CGROUPV1_BASE_MEM)
+	if err != nil {
+		//trying fetching memory using CGROUP_V2 path
+		mem, err = docker.CgroupMem(containerID, CGROUPV2_BASE_MEM)
+		if err != nil {
+			//unable to get memory usage from CGROUPS, likely disabled. Defaulting to PID memory consumption
+			sysInfo, err := pidusage.GetStat(pid)
+			if err != nil {
+				return 0, err
+			}
+			return sysInfo.Memory, nil
+		}
+	}
+	return float64(mem.MemUsageInBytes), nil
 }
 
 func withCustomResolvConf(src string) func(context.Context, oci.Client, *containers.Container, *oci.Spec) error {
