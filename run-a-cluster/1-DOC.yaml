@@ -3,7 +3,7 @@ version: "3.3"
 services:
 
   dashboard:
-    image: ghcr.io/oakestra/dashboard:latest
+    image: ghcr.io/oakestra/dashboard:alpha-v0.4.205
     ports:
       - '80:80'
     restart: unless-stopped
@@ -13,7 +13,8 @@ services:
 
   # System Manager REST API of Root Orchestrator
   system_manager:
-    image: ghcr.io/oakestra/oakestra/root-system-manager:latest
+    # image: ghcr.io/oakestra/oakestra/root-system-manager:latest
+    build: ./../root_orchestrator/system-manager-python/. 
     hostname: system_manager
     container_name: system_manager
     network_mode: "host"

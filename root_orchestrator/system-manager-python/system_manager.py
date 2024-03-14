@@ -26,6 +26,8 @@ from werkzeug.utils import redirect, secure_filename
 from proto.clusterRegistration_pb2 import *
 from proto.clusterRegistration_pb2_grpc import *
 
+from ext_requests.cluster_requests import cluster_request_status
+
 import grpc
 from google.protobuf.json_format import MessageToDict
 
@@ -157,6 +159,11 @@ class ClusterRegistrationServicer(register_clusterServicer):
             cluster_address=cluster_ip,
             cluster_port=request.network_component_port
         )
+        
+        # Ask for status - Cluster Request. 
+        app.logger.info("\n\n Ask for status \n\n")
+        cluster_request_status(cid)
+        app.logger.info("\n\n Ask for status \n\n")
         return SC2Message(id=str(cid))
 
 def serve():
