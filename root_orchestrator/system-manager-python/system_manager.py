@@ -1,11 +1,12 @@
 import json
 import os
+import threading
+from concurrent import futures
 from datetime import timedelta
 from pathlib import Path
 from secrets import token_hex
-from concurrent import futures
-import threading
 
+import grpc
 from blueprints import blueprints
 from bson import json_util
 from ext_requests.cluster_db import mongo_upsert_cluster
@@ -18,15 +19,14 @@ from flask_jwt_extended import JWTManager
 from flask_smorest import Api
 from flask_socketio import SocketIO, emit
 from flask_swagger_ui import get_swaggerui_blueprint
+from google.protobuf.json_format import MessageToDict
+from proto.clusterRegistration_pb2 import SC1Message, SC2Message
+from proto.clusterRegistration_pb2_grpc import (
+    add_register_clusterServicer_to_server,
+    register_clusterServicer,
+)
 from sm_logging import configure_logging
 from werkzeug.utils import redirect, secure_filename
-
-from proto.clusterRegistration_pb2 import *
-from proto.clusterRegistration_pb2_grpc import *
-
-
-import grpc
-from google.protobuf.json_format import MessageToDict
 
 my_logger = configure_logging()
 
