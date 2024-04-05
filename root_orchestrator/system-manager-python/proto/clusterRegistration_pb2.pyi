@@ -1,7 +1,13 @@
 from google.protobuf.internal import containers as _containers
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
-from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Mapping, Optional as _Optional, Union as _Union
+from typing import (
+    ClassVar as _ClassVar,
+    Iterable as _Iterable,
+    Mapping as _Mapping,
+    Optional as _Optional,
+    Union as _Union,
+)
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
@@ -18,7 +24,13 @@ class SC1Message(_message.Message):
     def __init__(self, hello_cluster_manager: _Optional[str] = ...) -> None: ...
 
 class CS2Message(_message.Message):
-    __slots__ = ("manager_port", "network_component_port", "cluster_name", "cluster_info", "cluster_location")
+    __slots__ = (
+        "manager_port",
+        "network_component_port",
+        "cluster_name",
+        "cluster_info",
+        "cluster_location",
+    )
     MANAGER_PORT_FIELD_NUMBER: _ClassVar[int]
     NETWORK_COMPONENT_PORT_FIELD_NUMBER: _ClassVar[int]
     CLUSTER_NAME_FIELD_NUMBER: _ClassVar[int]
@@ -29,7 +41,14 @@ class CS2Message(_message.Message):
     cluster_name: str
     cluster_info: _containers.RepeatedCompositeFieldContainer[KeyValue]
     cluster_location: str
-    def __init__(self, manager_port: _Optional[int] = ..., network_component_port: _Optional[int] = ..., cluster_name: _Optional[str] = ..., cluster_info: _Optional[_Iterable[_Union[KeyValue, _Mapping]]] = ..., cluster_location: _Optional[str] = ...) -> None: ...
+    def __init__(
+        self,
+        manager_port: _Optional[int] = ...,
+        network_component_port: _Optional[int] = ...,
+        cluster_name: _Optional[str] = ...,
+        cluster_info: _Optional[_Iterable[_Union[KeyValue, _Mapping]]] = ...,
+        cluster_location: _Optional[str] = ...,
+    ) -> None: ...
 
 class KeyValue(_message.Message):
     __slots__ = ("key", "value")
