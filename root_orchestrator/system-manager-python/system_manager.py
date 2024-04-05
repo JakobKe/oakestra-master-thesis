@@ -60,7 +60,7 @@ mongo_init(app)
 create_admin()
 
 MY_PORT = os.environ.get("MY_PORT") or 10000
-MY_PORT_GRPC = os.environ.get('MY_PORT_GRPC') or 50052
+MY_PORT_GRPC = os.environ.get("MY_PORT_GRPC") or 50052
 
 cluster_gauges_for_prometheus = []
 
@@ -130,37 +130,39 @@ def disconnect():
 # ......................................................#
 
 
-
 # .............. Register clusters via GRPC ............#
 # ......................................................#
 
+
 class ClusterRegistrationServicer(register_clusterServicer):
     def handle_init_greeting(self, request, context):
-        app.logger.info('gRPC - Cluster_Manager connected: {}'.format(context.peer()))
-        return SC1Message(hello_cluster_manager= "please send your cluster info")
-    
+        app.logger.info("gRPC - Cluster_Manager connected: {}".format(context.peer()))
+        return SC1Message(hello_cluster_manager="please send your cluster info")
+
     def handle_init_final(self, request, context):
-        app.logger.info('gRPC - Received Cluster_Manager_to_System_Manager_1: {}'.
-                    format(context.peer()))
+        app.logger.info(
+            "gRPC - Received Cluster_Manager_to_System_Manager_1: {}".format(context.peer())
+        )
         app.logger.info(request)
         message = MessageToDict(request, preserving_proto_field_name=True)
-        cluster_ip= context.peer().split(':')[1] 
-        
+        cluster_ip = context.peer().split(":")[1]
+
         cid = mongo_upsert_cluster(cluster_ip=cluster_ip, message=message)
-        
+
         net_register_cluster(
             cluster_id=str(cid),
             cluster_address=cluster_ip,
-            cluster_port=request.network_component_port
+            cluster_port=request.network_component_port,
         )
-       
+
         return SC2Message(id=str(cid))
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     # server = grpc.server()  # single threaded
     add_register_clusterServicer_to_server(ClusterRegistrationServicer(), server)
-    server.add_insecure_port('0.0.0.0:'+str(MY_PORT_GRPC))
+    server.add_insecure_port("0.0.0.0:" + str(MY_PORT_GRPC))
     server.start()
     server.wait_for_termination()
 
@@ -196,15 +198,19 @@ def upload_file():
     <h1>Not a valid request</h1>
     """
 
+
 def start_flask_server():
-    eventlet.wsgi.server(eventlet.listen(('0.0.0.0', int(MY_PORT))), app, log=my_logger)
+    eventlet.wsgi.server(eventlet.listen(("0.0.0.0", int(MY_PORT))), app, log=my_logger)
+
 
 def start_grpc_server():
     my_logger.info("Start gRPC Server")
     serve()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import eventlet
+
     # Hier starte die beiden Server in Threads
     flask_thread = threading.Thread(target=start_flask_server)
     grpc_thread = threading.Thread(target=start_grpc_server)
@@ -215,5 +221,3 @@ if __name__ == '__main__':
     # Warte, bis beide Threads beendet sind
     flask_thread.join()
     grpc_thread.join()
-   
-

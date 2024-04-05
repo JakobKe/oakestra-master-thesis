@@ -5,18 +5,11 @@ from ext_requests.apps_db import mongo_find_cluster_of_job, mongo_find_job_by_id
 from ext_requests.cluster_db import mongo_find_cluster_by_id, mongo_find_cluster_by_ip
 
 
-
 def cluster_request_status(cluster_id):
     print("Status Request...")
     cluster = mongo_find_cluster_by_id(cluster_id)
     try:
-        cluster_addr = (
-            "http://"
-            + cluster.get("ip")
-            + ":"
-            + str(cluster.get("port"))
-            + "/status"
-        )
+        cluster_addr = "http://" + cluster.get("ip") + ":" + str(cluster.get("port")) + "/status"
         print(cluster_addr)
         resp = requests.get(cluster_addr)
         print(resp)
