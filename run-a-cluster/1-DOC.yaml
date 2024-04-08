@@ -83,6 +83,17 @@ services:
     container_name: grafana
     network_mode: "host"
 
+  resource_abstractor:
+    image: ghcr.io/oakestra/oakestra/root-resource-abstractor:alpha-v0.4.301
+    container_name: resource_abstractor
+    hostname: resource_abstractor
+    network_mode: "host"
+    environment:
+      - RESOURCE_ABSTRACTOR_PORT=11011
+      - CLOUD_MONGO_URL=localhost
+      - CLOUD_MONGO_PORT=10007
+    depends_on:
+      - mongo_root
 
   # Cloud Scheduler
   cloud_scheduler:
@@ -94,12 +105,12 @@ services:
       - MY_PORT=10004
       - SYSTEM_MANAGER_URL=localhost
       - SYSTEM_MANAGER_PORT=10000
-      - CLOUD_MONGO_URL=localhost
-      - CLOUD_MONGO_PORT=10007
+      - RESOURCE_ABSTRACTOR_URL=localhost
+      - RESOURCE_ABSTRACTOR_PORT=11011
       - REDIS_ADDR=redis://:cloudRedis@localhost:6379
     depends_on:
       - redis
-      - mongo_root
+      - resource_abstractor
 
   # MQTT
   mqtt:
@@ -164,7 +175,7 @@ services:
     image: ghcr.io/oakestra/oakestra/cluster-manager:latest
     container_name: cluster_manager
     hostname: cluster_manager
-    command: bash -c 'sleep 2; python cluster_manager.py'
+    command: bash -c 'sleep 15; python cluster_manager.py'
     network_mode: "host"
     environment:
       - MY_PORT=10100
@@ -236,3 +247,7 @@ volumes:
     driver: local
   mongodb_cluster_net_data:
     driver: local
+
+networks:
+  ip6net:
+    enable_ipv6: true

@@ -3,6 +3,19 @@ import logging
 import requests
 from ext_requests.apps_db import mongo_find_cluster_of_job, mongo_find_job_by_id
 from ext_requests.cluster_db import mongo_find_cluster_by_id, mongo_find_cluster_by_ip
+from utils.network import sanitize
+
+
+def cluster_request_status(cluster_id):
+    print("Status Request...")
+    cluster = mongo_find_cluster_by_id(cluster_id)
+    try:
+        cluster_addr = "http://" + cluster.get("ip") + ":" + str(cluster.get("port")) + "/status"
+        print(cluster_addr)
+        resp = requests.get(cluster_addr)
+        print(resp)
+    except requests.exceptions.RequestException:
+        print("Calling Cluster Orchestrator /status not successful.")
 
 
 def cluster_request_status(cluster_id):
@@ -24,7 +37,7 @@ def cluster_request_to_deploy(cluster_id, job_id, instance_number):
     try:
         cluster_addr = (
             "http://"
-            + cluster.get("ip")
+            + sanitize(cluster.get("ip"), request=True)
             + ":"
             + str(cluster.get("port"))
             + "/api/deploy/"
@@ -44,7 +57,7 @@ def cluster_request_to_delete_job(job_id, instance_number):
     try:
         cluster_addr = (
             "http://"
-            + cluster.get("ip")
+            + sanitize(cluster.get("ip"), request=True)
             + ":"
             + str(cluster.get("port"))
             + "/api/delete/"
@@ -52,12 +65,13 @@ def cluster_request_to_delete_job(job_id, instance_number):
             + "/"
             + str(instance_number)
         )
+        print("Requesting:", cluster_addr)
         resp = requests.get(cluster_addr)
         print(resp)
     except Exception as e:
         logging.error(e)
         print(e)
-        print("Calling Cluster Orchestrator /api/delete not successful.")
+        print("Calling Cluster Orchestrator /api/delete job not successful.")
 
 
 def cluster_request_to_delete_job_by_ip(job_id, instance_number, ip):
@@ -65,7 +79,7 @@ def cluster_request_to_delete_job_by_ip(job_id, instance_number, ip):
         cluster = mongo_find_cluster_by_ip(ip)
         cluster_addr = (
             "http://"
-            + cluster.get("ip")
+            + sanitize(cluster.get("ip"), request=True)
             + ":"
             + str(cluster.get("port"))
             + "/api/delete/"
@@ -73,16 +87,21 @@ def cluster_request_to_delete_job_by_ip(job_id, instance_number, ip):
             + "/"
             + str(instance_number)
         )
+        print("Requesting:", cluster_addr)
         resp = requests.get(cluster_addr)
         print(resp)
     except Exception as e:
         logging.error(e)
-        print("Calling Cluster Orchestrator /api/delete not successful.")
+        print("Calling Cluster Orchestrator /api/delete job by ip not successful.")
 
 
 def cluster_request_to_replicate_up(cluster_obj, job_obj, int_replicas):
     cluster_addr = (
-        "http://" + cluster_obj.get("ip") + ":" + str(cluster_obj.get("port")) + "/api/replicate/"
+        "http://"
+        + sanitize(cluster_obj.get("ip"), request=True)
+        + ":"
+        + str(cluster_obj.get("port"))
+        + "/api/replicate/"
     )
     try:
         resp = requests.post(cluster_addr, json={"job": job_obj, "int_replicas": int_replicas})
@@ -94,7 +113,11 @@ def cluster_request_to_replicate_up(cluster_obj, job_obj, int_replicas):
 
 def cluster_request_to_replicate_down(cluster_obj, job_obj, int_replicas):
     cluster_addr = (
-        "http://" + cluster_obj.get("ip") + ":" + str(cluster_obj.get("port")) + "/api/replicate/"
+        "http://"
+        + sanitize(cluster_obj.get("ip"), request=True)
+        + ":"
+        + str(cluster_obj.get("port"))
+        + "/api/replicate/"
     )
     try:
         resp = requests.post(cluster_addr, json={"job": job_obj, "int_replicas": int_replicas})
@@ -106,7 +129,11 @@ def cluster_request_to_replicate_down(cluster_obj, job_obj, int_replicas):
 
 def cluster_request_to_move_within_cluster(cluster_obj, job_id, node_from, node_to):
     cluster_addr = (
-        "http://" + cluster_obj.get("ip") + ":" + str(cluster_obj.get("port")) + "/api/move/"
+        "http://"
+        + sanitize(cluster_obj.get("ip"), request=True)
+        + ":"
+        + str(cluster_obj.get("port"))
+        + "/api/move/"
     )
     try:
         resp = requests.post(

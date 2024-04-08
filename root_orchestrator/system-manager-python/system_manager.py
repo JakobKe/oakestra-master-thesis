@@ -26,6 +26,7 @@ from proto.clusterRegistration_pb2_grpc import (
     register_clusterServicer,
 )
 from sm_logging import configure_logging
+from utils.network import sanitize
 from werkzeug.utils import redirect, secure_filename
 
 my_logger = configure_logging()
@@ -83,6 +84,7 @@ swaggerui_blueprint = get_swaggerui_blueprint(
 )
 app.register_blueprint(swaggerui_blueprint)
 
+
 # .......... Register clusters via WebSocket ...........#
 # ......................................................#
 
@@ -109,12 +111,14 @@ def handle_init_client(message):
     )
     app.logger.info(message)
 
-    cid = mongo_upsert_cluster(cluster_ip=request.remote_addr, message=message)
+    cluster_address = sanitize(request.remote_addr)
+
+    cid = mongo_upsert_cluster(cluster_ip=cluster_address, message=message)
     x = {"id": str(cid)}
 
     net_register_cluster(
         cluster_id=str(cid),
-        cluster_address=request.remote_addr,
+        cluster_address=cluster_address,
         cluster_port=message["network_component_port"],
     )
 
@@ -200,8 +204,9 @@ def upload_file():
 
 
 def start_flask_server():
-    eventlet.wsgi.server(eventlet.listen(("0.0.0.0", int(MY_PORT))), app, log=my_logger)
-
+     eventlet.wsgi.server(
+        eventlet.listen(("::", int(MY_PORT)), family=socket.AF_INET6), app, log=my_logger
+    )
 
 def start_grpc_server():
     my_logger.info("Start gRPC Server")
@@ -210,14 +215,11 @@ def start_grpc_server():
 
 if __name__ == "__main__":
     import eventlet
-
-    # Hier starte die beiden Server in Threads
     flask_thread = threading.Thread(target=start_flask_server)
     grpc_thread = threading.Thread(target=start_grpc_server)
 
     flask_thread.start()
     grpc_thread.start()
 
-    # Warte, bis beide Threads beendet sind
     flask_thread.join()
     grpc_thread.join()

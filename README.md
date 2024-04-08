@@ -1,3 +1,8 @@
+![workflow code style](https://github.com/oakestra/oakestra/actions/workflows/python_codestyle_check.yml/badge.svg)
+![example artifacts](https://github.com/oakestra/oakestra/actions/workflows/node_engine_artifacts.yml/badge.svg)
+![example artifacts](https://github.com/oakestra/oakestra/actions/workflows/root_system_manager_tests.yml/badge.svg)
+[![Stable](https://img.shields.io/badge/Latest%20Stable-v0.4.204-green.svg)](https://github.com/oakestra/oakestra/tree/v0.4.204)
+[![Github All Releases](https://img.shields.io/github/downloads/oakestra/oakestra/total.svg)]()
 ![Oakestra](res/oakestra-white.png)
 
 **Oakestra** is an orchestration platform designed for Edge Computing.
@@ -128,21 +133,45 @@ Add a new application, and specify the app name, namespace, and description.
 **N.b.: Max 8 characters for app name and namespace**
 ![](https://hackmd.io/_uploads/H1HGnqjnh.png)
 
-Add a new service to the application and set the service name, namespace, and image as follows
-![](fig/fig-service-deploy.png)
-- Service Name: `nginx`
-- Service namespace: `test`
-- Virtualization: `Container`
-- Code: `docker.io/library/nginx:latest`
-- Port: `80:80` we map port 80 to external port 80
+Then, create a new service using the <img src="https://hackmd.io/_uploads/BkaUb7utp.png" style="width:10em"/> button. 
 
-Now hit the Deploy All button to deploy all the configured services. 
-After a while, you should see the service up and running. Click it to get more info. 
-![](fig/fig-deployed.png)
+Fill the form using the following values: 
+**N.b.: Max 8 characters for service name and namespace**
+![image](https://hackmd.io/_uploads/BysAV7uta.png)
 
-The Node IP field represents the address where you can reach your service. 
+```
+Service name: nginx
+Namespace: test
+Virtualization: Container
+Memory: 100MB
+Vcpus: 1
+Vgpus: 0
+Vtpus: 0
+Bandwidth in/out: 0
+Storage: 0
+Port: 80
+Code: docker.io/library/nginx:latest
+```
 
-You can try in your browser if you can see your nginx application at `http://NODE_IP/`
+Finally, deploy the application using the deploy button.
+
+<p>
+<img src="https://hackmd.io/_uploads/rkvdHQdt6.png" style="width:15em"/>
+</p>
+
+Check the application status, IP address, and logs.
+
+<p>
+<img src="https://hackmd.io/_uploads/r1YoSQdFT.png" style="width:15em"/>
+</p>
+
+![image](https://hackmd.io/_uploads/HyX6HmutT.png)
+
+![image](https://hackmd.io/_uploads/Bkh0QmOF6.png)
+
+The Node IP field represents the address where you can reach your service. Let's try to use our browser now to navigate to the IP 131.159.24.51 used by this application. 
+
+![image](https://hackmd.io/_uploads/HkPGUXOt6.png)
 
 # 🎯 Troubleshoot
 <a name="🎯-troubleshoot"></a>
@@ -164,11 +193,12 @@ You can try in your browser if you can see your nginx application at `http://NOD
 
 - #### Other stuff? Contact us on Discord!
 
-# 🛠️ How to create a development cluster
+# 🛠️ How to create a multi-cluster setup
 <a name="🛠️-how-to-create-a-development-cluster"></a>
 
 ### Root Orchestrator 
 
+First, initialize a Root orchestrator. 
 On a Linux machine first, install Docker and Docker-compose. Then, run the following commands to set up the Root Orchestrator components.
 
 ```bash
@@ -185,7 +215,7 @@ The following ports are exposed:
 
 ### Cluster Orchestrator
 
-For each one of the cluster orchestrators that needs to be deployed 
+For each cluster, install one cluster orchestrator. 
 
 - Log into the target machine/vm you intend to use
 - Install Docker and Docker-compose.
@@ -210,7 +240,7 @@ The following ports are exposed:
 
 ### Worker nodes -  Node Engine
 
-You can either use the pre-compiled binaries or compile them on your own. 
+For each worker node you can either use the pre-compiled binaries or compile them on your own. 
 
 *Requirements*
 - Linux OS with the following packages installed (Ubuntu and many other distributions natively supports them)
@@ -227,6 +257,7 @@ cd go_node_engine/build
 
 Then configure the NetManager and perform the startup as usual. 
 
+N.b. each worker node can now be configured to work with a different cluster.  
 
 # 🎼 Deployment descriptor
 <a name="🎼-deployment-descriptor"></a>
@@ -281,7 +312,7 @@ E.g.: `deploy_curl_application.yaml`
           "storage": 0,
           "code": "docker.io/library/nginx:latest",
           "state": "",
-          "port": "6080:60/tcp",
+          "port": "6080:80/tcp",
           "addresses": {
             "rr_ip": "10.30.30.30"
           },
@@ -444,7 +475,6 @@ Differences to Container Deployment:
 - arch: Specifies the architecture of the Unikernel given in code. The order of
         architectures must match the order of Unikernles given via the code field
 
-# Networking 
 
 # 🕸️ Networking
 <a name="🕸️-networking"></a>
